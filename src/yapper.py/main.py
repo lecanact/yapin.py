@@ -35,6 +35,9 @@ import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE = "https://www.yapper.website/api/bot/v1"
 COMMAND_LIMIT = 100
