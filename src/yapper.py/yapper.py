@@ -36,8 +36,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-__all__ = ["Bot", "Cog", "command", "listener", "button", "YapperError", "row", "btn", "link_button"]
-
 BASE = "https://www.yapper.website/api/bot/v1"
 COMMAND_LIMIT = 100
 EVENTS = ("message", "command", "member_join", "member_leave", "reaction_add", "reaction_remove",
