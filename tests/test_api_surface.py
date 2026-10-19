@@ -4,7 +4,8 @@ import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-MAIN_PATH = ROOT / "src" / "yapper.py" / "main.py"
+MAIN_PATH = ROOT / "src" / "yapper" / "main.py"
+EXPECTED = ("Bot", "Cog", "command", "listener", "button", "YapperError", "row", "btn", "link_button")
 
 
 class ApiSurfaceTests(unittest.TestCase):
@@ -14,8 +15,14 @@ class ApiSurfaceTests(unittest.TestCase):
         assert spec.loader is not None
         spec.loader.exec_module(module)
 
-        for name in ("Bot", "Cog", "command", "listener", "button", "YapperError", "row", "btn", "link_button"):
+        for name in EXPECTED:
             self.assertTrue(hasattr(module, name), name)
+
+    def test_package_exports_expected_symbols(self):
+        import yapper
+
+        for name in EXPECTED:
+            self.assertTrue(hasattr(yapper, name), name)
 
 
 if __name__ == "__main__":
