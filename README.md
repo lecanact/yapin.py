@@ -11,10 +11,7 @@ pip install yapper.py
 ## Quick start
 
 ```python
-from dotenv import load_dotenv
 import yapper
-
-load_dotenv()
 
 bot = yapper.Bot()  # reads YAPPER_BOT_TOKEN from env
 
