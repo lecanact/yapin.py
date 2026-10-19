@@ -1,4 +1,4 @@
-"""Yapper bot library for Python. One file, standard library only, Python 3.9+.
+"""Yapper bot library for Python. Python 3.10+, with python-dotenv as its only dependency.
 
     import yapper
 
@@ -19,8 +19,9 @@
     bot.load_extensions("cogs")            # optional: every cogs/*.py (see Cog below)
     bot.run()
 
-Save this file next to your bot and run it with `python bot.py`. Nothing to install, nothing to host:
-the bot fetches its own events from Yapper (long polling). Docs: https://www.yapper.website/developers
+Install it with `pip install yapper.py` (this also installs python-dotenv, which loads a .env file for you)
+and run your bot with `python bot.py`. Nothing to host: the bot fetches its own events from Yapper
+(long polling). Docs: https://www.yapper.website/developers
 """
 import importlib
 import importlib.util
