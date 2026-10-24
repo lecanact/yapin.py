@@ -23,7 +23,9 @@ Save this file next to your bot and run it with `python bot.py`. Nothing to inst
 the bot fetches its own events from Yapin’ (long polling). Docs: https://www.yapin.gg/developers
 """
 import importlib, importlib.util, inspect, json, os, random, re, sys, time, traceback, urllib.error, urllib.parse, urllib.request
-from dotenv import load_dotenv()
+from dotenv import load_dotenv
+
+load_dotenv()
 
 __all__ = ["Bot", "VoiceCall", "Cog", "command", "listener", "button", "YapperError", "row", "btn", "link_button"]
 
