@@ -1,6 +1,4 @@
-import importlib.util
-import pathlib
-import unittest
+import importlib.util, pathlib, unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]

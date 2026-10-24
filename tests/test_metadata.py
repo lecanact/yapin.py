@@ -1,6 +1,4 @@
-import pathlib
-import tomllib
-import unittest
+import pathlib, tomllib, unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]

@@ -1,4 +1,4 @@
-"""Yapper bot library for Python. Python 3.10+, with python-dotenv as its only dependency.
+"""Yapin’ bot library for Python. One file, standard library only, Python 3.9+.
 
     import yapper
 
@@ -19,28 +19,15 @@
     bot.load_extensions("cogs")            # optional: every cogs/*.py (see Cog below)
     bot.run()
 
-Install it with `pip install yapper.py` (this also installs python-dotenv, which loads a .env file for you)
-and run your bot with `python bot.py`. Nothing to host: the bot fetches its own events from Yapper
-(long polling). Docs: https://www.yapper.website/developers
+Save this file next to your bot and run it with `python bot.py`. Nothing to install, nothing to host:
+the bot fetches its own events from Yapin’ (long polling). Docs: https://www.yapin.gg/developers
 """
-import importlib
-import importlib.util
-import inspect
-import json
-import os
-import random
-import re
-import sys
-import time
-import traceback
-import urllib.error
-import urllib.parse
-import urllib.request
-from dotenv import load_dotenv
+import importlib, importlib.util, inspect, json, os, random, re, sys, time, traceback, urllib.error, urllib.parse, urllib.request
+from dotenv import load_dotenv()
 
-load_dotenv()
+__all__ = ["Bot", "VoiceCall", "Cog", "command", "listener", "button", "YapperError", "row", "btn", "link_button"]
 
-BASE = "https://www.yapper.website/api/bot/v1"
+BASE = "https://www.yapin.gg/api/bot/v1"
 COMMAND_LIMIT = 100
 EVENTS = ("message", "command", "member_join", "member_leave", "reaction_add", "reaction_remove",
           "voice_join", "voice_leave", "interaction", "test", "ready", "error")
@@ -94,20 +81,20 @@ class Interaction(Data):
     """A button click: i.custom_id, i.user_id, i.username, and i.reply / i.ephemeral / i.update / i.ack.
     Answer within 3 seconds or the person sees "This interaction failed"."""
 
-    def _answer(self, kind, content=None, embeds=None, components=None):
-        return self._bot.respond(self, kind, content=content, embeds=embeds, components=components)
+    def _answer(self, kind, content=None, embeds=None, components=None, layout=None):
+        return self._bot.respond(self, kind, content=content, embeds=embeds, components=components, layout=layout)
 
-    def reply(self, content="", embeds=None, components=None):
-        """A new message in the channel."""
-        return self._answer("reply", content, embeds, components)
+    def reply(self, content="", embeds=None, components=None, layout=None):
+        """A new message in the channel. layout=[...] sends a Components V2 message instead."""
+        return self._answer("reply", None if layout is not None else content, embeds, components, layout)
 
     def ephemeral(self, content="", embeds=None):
         """A message only the person who clicked sees."""
         return self._answer("ephemeral", content, embeds)
 
-    def update(self, content=None, embeds=None, components=None):
-        """Change the message the button is on (left out = kept)."""
-        return self._answer("update", content, embeds, components)
+    def update(self, content=None, embeds=None, components=None, layout=None):
+        """Change the message the button is on (left out = kept). On a Components V2 message: update(layout=[...])."""
+        return self._answer("update", content, embeds, components, layout)
 
     def ack(self):
         """Just say "got it", so no error shows."""
@@ -134,6 +121,62 @@ def btn(label, custom_id, style="secondary", emoji=None, disabled=False):
 def link_button(label, url):
     """A button that opens a https link."""
     return {"type": "button", "style": "link", "label": label, "url": url}
+
+
+# ---- Components V2 (bot.send_layout): layout components, standard JSON shape and type numbers ----
+
+IS_COMPONENTS_V2 = 1 << 15
+_COLORS = {"red": 0xED4245, "green": 0x57F287, "blue": 0x5865F2, "yellow": 0xFEE75C, "purple": 0x9B59B6,
+           "orange": 0xE67E22, "grey": 0x95A5A6, "gray": 0x95A5A6}
+
+
+def _clean(d):
+    return {k: v for k, v in d.items() if v is not None and v is not False}
+
+
+def text(content):
+    """Markdown text (type 10). Mentions, links and emoji work like in messages; no HTML."""
+    return {"type": 10, "content": str(content)}
+
+
+def thumbnail(url, description=None, spoiler=False):
+    """A small picture (type 11), only as a section's accessory."""
+    return _clean({"type": 11, "media": {"url": url}, "description": description, "spoiler": spoiler})
+
+
+def section(*texts, accessory):
+    """1 to 3 lines of text with a button or a thumbnail beside them (type 9): section("Ready?", accessory=btn("Go", "go"))."""
+    return {"type": 9, "components": [t if isinstance(t, dict) else text(t) for t in texts], "accessory": accessory}
+
+
+def media(url, description=None, spoiler=False):
+    """One picture or video for gallery()."""
+    return _clean({"media": {"url": url}, "description": description, "spoiler": spoiler})
+
+
+def gallery(*items):
+    """1 to 10 pictures or videos in a grid (type 12): gallery("https://…", media("https://…", spoiler=True))."""
+    return {"type": 12, "items": [i if isinstance(i, dict) else media(i) for i in items]}
+
+
+def separator(divider=True, spacing="small"):
+    """A line (or just space with divider=False), spacing "small" or "large" (type 14)."""
+    return {"type": 14, "divider": bool(divider), "spacing": 2 if spacing in ("large", 2) else 1}
+
+
+def file_display(url, spoiler=False):
+    """A file to download (type 13): an https link to a Yapin’ upload or an allowed host."""
+    return _clean({"type": 13, "file": {"url": url}, "spoiler": spoiler})
+
+
+def container(*components, accent=None, spoiler=False):
+    """A card holding other components (type 17). accent: 0x5865F2, "#5865f2" or a name like "blue"."""
+    c = {"type": 17, "components": [x if isinstance(x, dict) else text(x) for x in components]}
+    if accent is not None:
+        c["accent_color"] = accent if isinstance(accent, int) else _COLORS.get(str(accent).lower()) or int(str(accent).lstrip("#"), 16)
+    if spoiler:
+        c["spoiler"] = True
+    return c
 
 
 # ---- decorators for cogs (on a Cog's methods) ----
@@ -472,7 +515,7 @@ class Bot:
     # ---- HTTP ----
 
     def api(self, method, path, body=None, timeout=40, retries=3):
-        """Raw API call: bot.api("GET", "/servers"). A 429 with Retry-After, or Yapper's own 503 "busy",
+        """Raw API call: bot.api("GET", "/servers"). A 429 with Retry-After, or Yapin’s own 503 "busy",
         is waited out and retried (nothing was done, so that's safe). Other errors raise YapperError."""
         data = None if body is None else json.dumps(body).encode()
         req = urllib.request.Request(self.base + path, method=method, data=data, headers={
@@ -497,7 +540,7 @@ class Bot:
                     wait = 0
             if 0 < wait <= 60 and retries > 0:
                 if self.log:
-                    print(f"[yapper] {'Yapper busy' if busy else 'rate limited'}, retrying {method} {path} in {wait:g}s")
+                    print(f"[yapper] {'busy' if busy else 'rate limited'}, retrying {method} {path} in {wait:g}s")
                 time.sleep(wait * (1 + random.random() * 0.5))
                 return self.api(method, path, body, timeout, retries - 1)
             raise YapperError(err.get("error") or f"{method} {path} failed ({e.code})", e.code, wait or None) from None
@@ -515,6 +558,19 @@ class Bot:
             body["components"] = components if isinstance(components, list) else [components]
         return Data(self.api("POST", f"/channels/{channel_id}/messages", body).get("message") or {})
 
+    def send_layout(self, channel_id, components, reply_to=None):
+        """Post a Components V2 message: the layout is the whole message (no content or embeds).
+        bot.send_layout(ch, [container(text("# Hi"), section("Ready?", accessory=btn("Go", "go")), accent="blue")])"""
+        body = {"flags": IS_COMPONENTS_V2, "components": components if isinstance(components, list) else [components]}
+        if reply_to:
+            body["reply_to"] = reply_to
+        return Data(self.api("POST", f"/channels/{channel_id}/messages", body).get("message") or {})
+
+    def edit_layout(self, channel_id, message_id, components):
+        """Swap the layout of one of the bot's Components V2 messages."""
+        body = {"flags": IS_COMPONENTS_V2, "components": components if isinstance(components, list) else [components]}
+        return Data(self.api("PATCH", f"/channels/{channel_id}/messages/{message_id}", body).get("message") or {})
+
     def edit(self, channel_id, message_id, content=None, embeds=None, components=None):
         body = {}
         if content is not None:
@@ -531,8 +587,8 @@ class Bot:
     def react(self, channel_id, message_id, emoji):
         return self.api("PUT", f"/channels/{channel_id}/messages/{message_id}/reactions/{urllib.parse.quote(emoji)}")
 
-    def respond(self, interaction, kind, content=None, embeds=None, components=None):
-        """Answer a button click: kind is reply, ephemeral, update or ack."""
+    def respond(self, interaction, kind, content=None, embeds=None, components=None, layout=None):
+        """Answer a button click: kind is reply, ephemeral, update or ack. layout=[...]: a Components V2 layout."""
         body = {"type": kind}
         if content is not None:
             body["content"] = str(content)
@@ -540,6 +596,9 @@ class Bot:
             body["embeds"] = embeds
         if components is not None:
             body["components"] = components
+        if layout is not None:
+            body["flags"] = IS_COMPONENTS_V2
+            body["components"] = layout if isinstance(layout, list) else [layout]
         return self.api("POST", f"/interactions/{interaction['id']}/{interaction['token']}/callback", body)
 
     def servers(self):
@@ -596,6 +655,51 @@ class Bot:
         """Time someone out for `minutes` (0 clears it)."""
         return self.api("POST", f"/servers/{server_id}/timeouts", {"user_id": user_id, "minutes": minutes, "reason": reason})
 
+    # ---- voice (Move Members for moves; 30 moves and 60 lookups a minute per bot) ----
+    def voice(self, server_id):
+        """Who is in voice: [{channel_id, user_ids}] for every voice channel the bot can see (empty ones too)."""
+        return self.api("GET", f"/servers/{server_id}/voice")["voice"]
+
+    def move_member(self, server_id, user_id, channel_id):
+        return self.api("POST", f"/servers/{server_id}/voice/move", {"user_id": user_id, "channel_id": channel_id})
+
+    def disconnect_member(self, server_id, user_id):
+        return self.api("POST", f"/servers/{server_id}/voice/disconnect", {"user_id": user_id})
+
+    # ---- the bot in voice: music bots (10 joins and leaves a minute; one voice channel per server) ----
+    def join_voice(self, server_id, channel_id):
+        """A ticket for a voice channel: {url, token, e2ee, voice_muted, channel_id, server_id}. Connect with any
+        LiveKit SDK within a minute. The bot sends one audio track (as a mic) and hears nobody. Joining another
+        channel of the same server drops it from the first. Most bots want connect_voice, which does all of it."""
+        return self.api("POST", f"/servers/{server_id}/voice/join", {"channel_id": channel_id})
+
+    def leave_voice(self, server_id):
+        """Take the bot out of voice in that server."""
+        return self.api("POST", f"/servers/{server_id}/voice/leave")
+
+    async def connect_voice(self, server_id, channel_id, sample_rate=48000, channels=2):
+        """Join a voice channel and get an audio source to play into. Needs `pip install livekit cryptography`
+        (only for this; the rest of this file stays standard library). Returns a VoiceCall: .room, .source (an
+        rtc.AudioSource: await source.capture_frame(rtc.AudioFrame(...))) and `await call.leave()`.
+        Calls on Yapin’ are end-to-end encrypted: this hands the bot's media key to everyone in the call the way the
+        app does (sealed to each person, the server never sees it) and encrypts the audio with it."""
+        import asyncio
+        from livekit import rtc  # noqa: deferred so the library works without it
+        t = await asyncio.to_thread(self.join_voice, server_id, channel_id)
+        media_key = os.urandom(32) if t.get("e2ee") else None
+        room = rtc.Room()
+        opts = rtc.RoomOptions(auto_subscribe=False)
+        if media_key:
+            # Shared key mode encrypts our frames with media_key; HKDF (1) is how the app's browsers turn it into the frame key.
+            opts.encryption = rtc.E2EEOptions(key_provider_options=rtc.KeyProviderOptions(
+                shared_key=media_key, ratchet_window_size=0, key_ring_size=16, key_derivation_function=1))
+        await room.connect(t["url"], t["token"], opts)
+        keys = await _hand_out_voice_key(room, media_key) if media_key else None
+        source = rtc.AudioSource(sample_rate, channels)
+        track = rtc.LocalAudioTrack.create_audio_track("audio", source)
+        await room.local_participant.publish_track(track, rtc.TrackPublishOptions(source=rtc.TrackSource.SOURCE_MICROPHONE, dtx=False))
+        return VoiceCall(room, source, track, bool(media_key), keys)
+
     def dm(self, user_id):
         """Open a DM with someone. Returns the channel id."""
         return self.api("POST", f"/users/{user_id}/dm")["channel_id"]
@@ -647,10 +751,20 @@ class Bot:
                 return
             msg = Message.of(data, self)
             name, args = data.get("command"), data.get("args")
-            if not name:
-                m = re.match(r"^(\S)([a-z0-9_-]{1,32})(?:\s+([\s\S]*))?$", data.get("content") or "", re.I)
-                if m and m.group(1) in self.prefixes and m.group(2).lower() in self.commands:
-                    name, args = m.group(2).lower(), (m.group(3) or "").strip()
+            # "/fish @OtherBot": a command picked for another bot (command_for) isn't ours to answer, even if we have /fish.
+            cf = data.get("command_for")
+            for_other = isinstance(cf, list) and (self.me or {}).get("id") not in cf
+            if not name and not for_other:
+                # A prefix can be longer than one character ("yap!"); the longest one that fits goes first,
+                # so "!!" wins over "!".
+                content = data.get("content") or ""
+                for p in sorted(self.prefixes, key=len, reverse=True):
+                    if not p or not content.startswith(p):
+                        continue
+                    m = re.match(r"^([a-z0-9_-]{1,32})(?:\s+([\s\S]*))?$", content[len(p):], re.I)
+                    if m and m.group(1).lower() in self.commands:
+                        name, args = m.group(1).lower(), (m.group(2) or "").strip()
+                        break
             c = self.commands.get(name) if name else None
             if c:
                 msg.command, msg.args = name, args or ""
@@ -682,7 +796,7 @@ class Bot:
             self._emit(kind, Data(data, type=kind))
 
     def sync_commands(self):
-        """Send the command list to Yapper (run() does it, and again after cogs change)."""
+        """Send the command list to Yapin’ (run() does it, and again after cogs change)."""
         self._dirty = False
         cmds = [{"name": n, "description": c["description"]} for n, c in self.commands.items()]
         self.api("PUT", "/commands", {"commands": cmds})
@@ -772,3 +886,79 @@ def _module_name(name):
         mod = os.path.splitext(os.path.basename(path))[0]
         return (f"{parent}.{mod}" if parent.isidentifier() else mod), path
     return s, None
+
+
+class VoiceCall:
+    """A bot in a voice channel (Bot.connect_voice): .room, .source, .track, .e2ee, and `await call.leave()`."""
+
+    def __init__(self, room, source, track, e2ee, keys):
+        self.room, self.source, self.track, self.e2ee, self._keys = room, source, track, e2ee, keys
+
+    async def leave(self):
+        if self._keys:
+            self._keys()
+        await self.room.disconnect()
+
+
+async def _hand_out_voice_key(room, media_key):
+    """Encrypted calls: the bot's half of the app's key handoff. Our P-256 public key goes in the participant
+    attribute `e2ee`; everyone who has one gets our media key over the data channel (topic yapper-e2ee), sealed with
+    AES-GCM under the ECDH secret the two of us share and bound to "<from>|<to>|<index>". The bot hears nobody, so it
+    never needs anyone's key back, only to answer when someone sends theirs. Returns a function that stops it."""
+    import asyncio
+    import base64
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+    me = room.local_participant.identity
+    priv = ec.generate_private_key(ec.SECP256R1())
+    my_pub = base64.b64encode(priv.public_key().public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)).decode()
+    sent, shared, state = {}, {}, {"stopped": False}
+
+    async def send_to(p, pub=None):
+        their = (p.attributes or {}).get("e2ee") or pub
+        if state["stopped"] or not their or p.identity == me or sent.get(p.identity) == their:
+            return
+        sent[p.identity] = their
+        try:
+            if their not in shared:
+                peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), base64.b64decode(their))
+                shared[their] = AESGCM(priv.exchange(ec.ECDH(), peer))
+            iv = os.urandom(12)
+            ct = shared[their].encrypt(iv, media_key, f"{me}|{p.identity}|0".encode())
+            msg = json.dumps({"i": 0, "iv": base64.b64encode(iv).decode(), "ct": base64.b64encode(ct).decode(), "k": my_pub})
+            await room.local_participant.publish_data(msg.encode(), reliable=True, topic="yapper-e2ee", destination_identities=[p.identity])
+        except Exception:
+            sent.pop(p.identity, None)  # muted by a moderator (no data permission) or a bad key: try again on the next change
+
+    def on_peer(p):
+        asyncio.ensure_future(send_to(p))
+
+    def on_attrs(_changed, p):
+        asyncio.ensure_future(send_to(p))
+
+    def on_data(packet):
+        if packet.topic != "yapper-e2ee" or packet.participant is None:
+            return
+        try:
+            k = json.loads(packet.data.decode()).get("k")
+        except Exception:
+            return
+        if isinstance(k, str):
+            sent.pop(packet.participant.identity, None)
+            asyncio.ensure_future(send_to(packet.participant, k))
+
+    room.on("participant_connected", on_peer)
+    room.on("participant_attributes_changed", on_attrs)
+    room.on("data_received", on_data)
+    await room.local_participant.set_attributes({"e2ee": my_pub})
+    for p in list(room.remote_participants.values()):
+        await send_to(p)
+
+    def stop():
+        state["stopped"] = True
+        room.off("participant_connected", on_peer)
+        room.off("participant_attributes_changed", on_attrs)
+        room.off("data_received", on_data)
+    return stop
