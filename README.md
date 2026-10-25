@@ -1,19 +1,19 @@
-# yapper.py
+# yapin.py
 
-Unofficial Python library for building bots on [Yapper](https://www.yapper.website/developers).
+Unofficial Python library for building bots on [Yapin'](https://www.yapin.gg/developers).
 
 ## Install
 
 ```bash
-pip install yapper.py
+pip install yapin.py
 ```
 
 ## Quick start
 
 ```python
-import yapper
+import yapin
 
-bot = yapper.Bot()  # reads YAPPER_BOT_TOKEN from env
+bot = yapin.Bot()  # reads YAPIN_BOT_TOKEN from .env or you can do yapin.bot(token="yb_")
 
 @bot.command("ping", "Check if the bot is alive")
 def ping(msg):
@@ -30,15 +30,15 @@ def vote(i):
 bot.run()
 ```
 
-Set `YAPPER_BOT_TOKEN` in your environment (token starts with `yb_`).
+Set `YAPIN_BOT_TOKEN` in your environment (token starts with `yb_`).
 
 ## Main concepts
 
 - **Commands**: register slash/prefix commands with `@bot.command(...)`.
 - **Events**: listen with `@bot.on("event_name")` or `@bot.event`.
 - **Interactions**: handle button clicks with `@bot.button("prefix:")`.
-- **Components**: build rows/buttons with `yapper.row(...)`, `yapper.btn(...)`, and `yapper.link_button(...)`.
-- **Cogs/extensions**: split features into classes/files using `yapper.Cog`, `bot.add_cog(...)`, `bot.load_extension(...)`, and `bot.load_extensions(...)`.
+- **Components**: build rows/buttons with `yapin.row(...)`, `yapin.btn(...)`, and `yapin.link_button(...)`.
+- **Cogs/extensions**: split features into classes/files using `yapin.Cog`, `bot.add_cog(...)`, `bot.load_extension(...)`, and `bot.load_extensions(...)`.
 
 ## Useful bot methods
 
@@ -50,5 +50,5 @@ Set `YAPPER_BOT_TOKEN` in your environment (token starts with `yb_`).
 
 ## API reference
 
-Use the official Yapper developer docs for API payload details:
-https://www.yapper.website/developers
+Use the official Yapin' developer docs for API payload details:
+https://www.yapin.gg/developers
