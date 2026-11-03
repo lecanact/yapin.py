@@ -1,13 +1,13 @@
-# yapin
+# yapin.py
 
 Python library for building bots on [Yapin'](https://yapin.gg/developers).
 
-`yapin` is built on [`yapper.py`](https://github.com/our-websites/yapper.py): it installs it for you, and `import yapin` gives you everything `import yapper` does (same classes, same behaviour, updates come with new `yapper.py` releases).
+`yapin.py` is built on [`yapper.py`](https://github.com/our-websites/yapper.py): it installs it for you, and `import yapin` gives you everything `import yapper` does (same classes, same behaviour, updates come with new `yapper.py` releases).
 
 ## Install
 
 ```bash
-pip install yapin
+pip install yapin.py
 ```
 
 Python 3.10 or newer.
