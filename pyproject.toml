@@ -3,7 +3,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "yapin"
+name = "yapin.py"
 version = "1.0.0"
 authors = [
   { name="LeAndre C.", email="leandre@lecanact.me" },
@@ -16,6 +16,7 @@ dependencies = [
     "python-dotenv>=1.2.4",
 ]
 keywords = [
+    "yapin.py", 
     "yapin",
     "yapper.py",
     "yapper",
@@ -29,8 +30,8 @@ license = "GPL-3.0-only"
 license-files = ["LICEN[CS]E*"]
 
 [project.urls]
-Repository = "https://github.com/lecanact/yapin"
-Issues = "https://github.com/lecanact/yapin/issues"
+Repository = "https://github.com/lecanact/yapin.py"
+Issues = "https://github.com/lecanact/yapin.py/issues"
 Documentation = "https://yapin.gg/developers"
 
 [tool.setuptools.packages.find]
